@@ -2,27 +2,16 @@ using GeradorDeProvas.Dominio.Modulos.ModuloDisciplina;
 using GeradorDeProvas.Dominio.Modulos.ModuloMateria;
 using GeradorDeProvas.Dominio.Modulos.ModuloProva;
 using GeradorDeProvas.Dominio.Modulos.ModuloQuestao;
-using GeradorDeProvas.Infra.Compartilhado.Orm;
 using GeradorDeProvas.Infra.Modulos.ModuloProva;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyModel.Resolution;
+using GeradorDeProvas.Testes.Integracao.Compartilhado.Orm;
 
 namespace GeradorDeProvas.Testes.Integracao.ModuloProva;
 
-
 [TestClass]
-public sealed class RepositorioProvaEmOrmTests
+public sealed class RepositorioProvaEmOrmTests : RepositorioBaseEmOrmTests
 {
-    private GeradorDeProvasDbContext dbContext = null!;
-    private RepositorioProvaEmOrm repositorio = null!;
-    [TestInitialize]
-
-    public void InicializarRepositorio()
-    {
-        dbContext = CriarDbContext(Guid.NewGuid());
-
-        repositorio = new RepositorioProvaEmOrm(dbContext);
-    }
+    // private GeradorDeProvasDbContext dbContext = null!;
+    // private RepositorioProvaEmOrm repositorio = null!;
 
 
     [TestMethod]
@@ -38,6 +27,8 @@ public sealed class RepositorioProvaEmOrmTests
              .Select(indice => new Questao($"Questão {indice}", materia, [new Alternativa("4", false), new Alternativa("7", true)]))
              .ToList();
         prova.SortearQuestoes(questoesDisponiveis, new Random(70));
+
+        RepositorioProvaEmOrm repositorio = new RepositorioProvaEmOrm(dbContext);
 
         //Ação
         repositorio.Cadastrar(prova);
@@ -72,6 +63,8 @@ public sealed class RepositorioProvaEmOrmTests
              .ToList();
         prova.SortearQuestoes(questoesDisponiveis, new Random(70));
 
+        RepositorioProvaEmOrm repositorio = new RepositorioProvaEmOrm(dbContext);
+
         repositorio.Cadastrar(prova);
 
         Prova provaAtualizada = new Prova("Prova Final", disciplina, null!, 8, 5, false);
@@ -104,6 +97,8 @@ public sealed class RepositorioProvaEmOrmTests
              .ToList();
         prova.SortearQuestoes(questoesDisponiveis, new Random(70));
 
+        RepositorioProvaEmOrm repositorio = new RepositorioProvaEmOrm(dbContext);
+
         repositorio.Cadastrar(prova);
 
         //Ação
@@ -130,6 +125,8 @@ public sealed class RepositorioProvaEmOrmTests
              .ToList();
         prova.SortearQuestoes(questoesDisponiveis, new Random(70));
 
+        RepositorioProvaEmOrm repositorio = new RepositorioProvaEmOrm(dbContext);
+
         repositorio.Cadastrar(prova);
 
         //Ação
@@ -142,13 +139,4 @@ public sealed class RepositorioProvaEmOrmTests
         Assert.HasCount(5, provas.First().Questoes);
     }
 
-    private GeradorDeProvasDbContext CriarDbContext(Guid userid)
-    {
-        DbContextOptions<GeradorDeProvasDbContext> options =
-            new DbContextOptionsBuilder<GeradorDeProvasDbContext>()
-                .UseInMemoryDatabase("GeradorDeProvasTestDB_Memory")
-                .Options;
-
-        return new GeradorDeProvasDbContext(options, new ProvedorDeUsuarioFake(userid));
-    }
 }
