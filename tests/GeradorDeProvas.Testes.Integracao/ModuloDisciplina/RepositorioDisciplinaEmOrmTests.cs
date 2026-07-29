@@ -1,42 +1,91 @@
-using GeradorDeProvas.Infra.Compartilhado.Orm;
-using GeradorDeProvas.Infra.Modulos.ModuloDisciplina;
-using GeradorDeProvas.Testes.Integracao.ModuloProva;
-using Microsoft.EntityFrameworkCore;
+using FizzWare.NBuilder;
+using GeradorDeProvas.Dominio.Modulos.ModuloDisciplina;
+using GeradorDeProvas.Testes.Integracao.Compartilhado.Orm;
 
 namespace GeradorDeProvas.Testes.Integracao.ModuloDisciplina;
 
-
 [TestClass]
-public sealed class RepositorioDisciplinaEmOrmTests
+public sealed class RepositorioDisciplinaEmOrmTests : RepositorioBaseEmOrmTests
 {
-    private GeradorDeProvasDbContext dbContext = null!;
-    private RepositorioDisciplinaEmOrm repositorio = null!;
-
-    [TestInitialize]
-    public void InicializarRepositorio()
+    [TestMethod]
+    public void CadastrarESelecionarPorId_CarregaRegistro()
     {
-        dbContext = CriarDbContext(Guid.NewGuid());
+        // Arranjo
+        Disciplina disciplina = Builder<Disciplina>
+            .CreateNew()
+            .With(d => d.Nome = "Nome1")
+            .With(d => d.UserId = Guid.Empty)
+            .Build();
 
-        repositorio = new RepositorioDisciplinaEmOrm(dbContext);
+        // Ação
+        repositorioDisciplina.Cadastrar(disciplina);
+        dbContext.ChangeTracker.Clear();
+
+        Disciplina? disciplinaSelecionada = repositorioDisciplina.SelecionarPorId(disciplina.Id);
+
+        // Asserção
+        Assert.IsNotNull(disciplinaSelecionada);
+        Assert.AreEqual("Nome1", disciplinaSelecionada.Nome);
     }
 
-    [TestCleanup]
-    public void LimparContexto()
+    [TestMethod]
+    public void Editar_AtualizaRegistroExistente()
     {
-        dbContext.Dispose();
+        // Arranjo
+        Disciplina disciplina = Builder<Disciplina>
+            .CreateNew()
+            .With(d => d.UserId = Guid.Empty)
+            .Persist();
 
+        Disciplina disciplinaAtualizada = Builder<Disciplina>
+            .CreateNew()
+            .With(d => d.Nome = "NomeAtualizado")
+            .With(d => d.UserId = Guid.Empty)
+            .Build();
+
+        // Ação
+        bool conseguiuEditar = repositorioDisciplina.Editar(disciplina.Id, disciplinaAtualizada);
+        dbContext.ChangeTracker.Clear();
+
+        Disciplina? disciplinaSelecionada = repositorioDisciplina.SelecionarPorId(disciplina.Id);
+
+        // Asserção
+        Assert.IsTrue(conseguiuEditar);
+        Assert.IsNotNull(disciplinaSelecionada);
+        Assert.AreEqual("NomeAtualizado", disciplinaSelecionada.Nome);
     }
 
-
-
-    private GeradorDeProvasDbContext CriarDbContext(Guid userid)
+    [TestMethod]
+    public void Excluir_RemoveRegistroExistente()
     {
-        DbContextOptions<GeradorDeProvasDbContext> options =
-            new DbContextOptionsBuilder<GeradorDeProvasDbContext>()
-                .UseInMemoryDatabase("GeradorDeProvasTestDB_Memory")
-                .Options;
+        // Arranjo
+        Disciplina disciplina = Builder<Disciplina>
+            .CreateNew()
+            .With(d => d.UserId = Guid.Empty)
+            .Persist();
 
-        return new GeradorDeProvasDbContext(options, new ProvedorDeUsuarioFake(userid));
+        // Ação
+        bool conseguiuExcluir = repositorioDisciplina.Excluir(disciplina.Id);
+        dbContext.ChangeTracker.Clear();
+
+        // Asserção
+        Assert.IsTrue(conseguiuExcluir);
+        Assert.IsNull(repositorioDisciplina.SelecionarPorId(disciplina.Id));
     }
 
+    [TestMethod]
+    public void SelecionarTodos_CarregaRegistros()
+    {
+        // Arranjo / Ação
+        IList<Disciplina> disciplina = Builder<Disciplina>
+            .CreateListOfSize(3)
+            .All()
+            .With(d => d.UserId = Guid.Empty)
+            .Persist();
+
+        dbContext.ChangeTracker.Clear();
+
+        // Asserção
+        Assert.HasCount(3, repositorioDisciplina.SelecionarTodos());
+    }
 }

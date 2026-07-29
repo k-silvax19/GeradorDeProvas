@@ -21,7 +21,6 @@ public abstract class RepositorioBaseEmOrmTests
     protected RepositorioQuestaoEmOrm repositorioQuestao = null!;
     protected RepositorioProvaEmOrm repositorioProva = null!;
 
-    // Hooks / Ganchos
     [TestInitialize]
     public void InicializarContexto()
     {
