@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.InMemory.Storage.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace GeradorDeProvas.Testes.E2E.Compartilhado;
@@ -13,7 +15,7 @@ namespace GeradorDeProvas.Testes.E2E.Compartilhado;
 public sealed class TestApplicationFactory : WebApplicationFactory<Entrypoint>
 {
     private readonly string nomeBanco;
-
+    protected InMemoryDatabaseRoot dbRoot;
     public string UrlBase { get; }
 
     public TestApplicationFactory()
@@ -29,7 +31,7 @@ public sealed class TestApplicationFactory : WebApplicationFactory<Entrypoint>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-
+        builder.UseSetting("Infra:NewRelic:Enabled", "False");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<GeradorDeProvasDbContext>>();
@@ -37,7 +39,7 @@ public sealed class TestApplicationFactory : WebApplicationFactory<Entrypoint>
 
             services.AddDbContext<GeradorDeProvasDbContext>(options =>
             {
-                options.UseInMemoryDatabase(nomeBanco);
+                options.UseInMemoryDatabase(nomeBanco, dbRoot);
             });
         });
     }
