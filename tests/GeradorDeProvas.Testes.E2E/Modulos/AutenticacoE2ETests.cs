@@ -1,25 +1,16 @@
 using System.Runtime.Intrinsics.Arm;
 using System.Text.RegularExpressions;
 using GeradorDeProvas.Testes.E2E.Compartilhado;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using Microsoft.Playwright.MSTest;
 
 namespace GeradorDeProvas.Testes.E2E.Modulos;
 
 [TestClass]
-public sealed class AutenticacoE2ETests : PageTest
+public sealed class AutenticacoE2ETests : E2ETestsBase
 {
-    private TestApplicationFactory aplicacao = null!;
-    private string UrlBase {get; set;} = string.Empty;
-
-    [TestInitialize]
-    public async Task InicializarAplicacao()
-    {
-        aplicacao = new TestApplicationFactory();
-
-        UrlBase = aplicacao.UrlBase;
-    }
-
     [TestMethod]
     public async Task Deve_Exibir_TelaDeLogin_ParaUsuarioAnonimo()
     {
@@ -53,5 +44,33 @@ public sealed class AutenticacoE2ETests : PageTest
         string rotaAbsoluta = new Uri(Page.Url).AbsolutePath;
 
         Assert.AreEqual("/", rotaAbsoluta);
+    }
+
+
+    [TestMethod]
+    public async Task Deve_EntrarEAutenticar_Usuario_Valido()
+    {
+        //Arange
+        const string email = "novo.usuario@teste.local";
+        const string senha = "Senha123!";
+
+        await RegistrarUsuarioAsync(email, senha);
+
+        //Act
+        await Page.GotoAsync($"{UrlBase}/Autenticacao/Entrar");
+        await Page.GetByLabel("E-mail").FillAsync(email);
+        await Page.GetByLabel("Senha", new() { Exact = true }).FillAsync(senha);
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Entrar" }).ClickAsync();
+
+
+        //Assert
+        string rotaAbsoluta = new Uri(Page.Url).AbsolutePath;
+
+        Assert.AreEqual("/", rotaAbsoluta);
+
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = email }))
+            .ToBeVisibleAsync();
+
     }
 }
